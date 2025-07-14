@@ -110,9 +110,9 @@ const Index = () => {
       <main className="container mx-auto px-4 py-6 space-y-6">
         {/* Welcome Section */}
         <div className="text-center space-y-2">
-          <h2 className="text-3xl font-bold text-foreground">Welcome to Mediscann</h2>
+          <h2 className="text-3xl font-bold text-foreground">Welcome to TaskMaster AI</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Track your medication expiry dates with ease. Scan barcodes, get notifications, and never let your medicines expire again.
+            Manage your tasks intelligently with AI-powered prioritization, smart reminders, and productivity insights.
           </p>
         </div>
 

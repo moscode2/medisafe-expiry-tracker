@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { Bell, Menu, Scan, User } from "lucide-react";
+import { Bell, Menu, CheckSquare } from "lucide-react";
+import UserMenu from "@/components/UserMenu";
 
 const Header = () => {
   return (
@@ -9,11 +10,11 @@ const Header = () => {
           {/* Logo and Title */}
           <div className="flex items-center gap-3">
             <div className="bg-gradient-primary p-2 rounded-lg shadow-medical">
-              <Scan className="h-6 w-6 text-primary-foreground" />
+              <CheckSquare className="h-6 w-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-foreground">Mediscann</h1>
-              <p className="text-xs text-muted-foreground">Medication Tracker</p>
+              <h1 className="text-xl font-bold text-foreground">TaskMaster AI</h1>
+              <p className="text-xs text-muted-foreground">Intelligent Task Management</p>
             </div>
           </div>
 
@@ -27,10 +28,8 @@ const Header = () => {
               </span>
             </Button>
 
-            {/* Profile */}
-            <Button variant="ghost" size="icon">
-              <User className="h-5 w-5" />
-            </Button>
+            {/* User Menu */}
+            <UserMenu />
 
             {/* Mobile Menu */}
             <Button variant="ghost" size="icon" className="md:hidden">

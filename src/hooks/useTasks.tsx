@@ -60,6 +60,24 @@ export const useTasks = () => {
       if (error) throw error;
       
       setTasks(prev => [data as Task, ...prev]);
+      
+      // Send SMS notification for task creation
+      if (taskData.priority === 'urgent' || taskData.priority === 'high') {
+        try {
+          await supabase.functions.invoke('send-sms-notification', {
+            body: {
+              to: '+1234567890', // You can later make this configurable per user
+              message: 'New task created and needs attention!',
+              taskTitle: taskData.title,
+              taskPriority: taskData.priority,
+            },
+          });
+        } catch (smsError) {
+          console.error('SMS notification failed:', smsError);
+          // Don't fail the task creation if SMS fails
+        }
+      }
+      
       toast({
         title: 'Success',
         description: 'Task created successfully',
@@ -133,7 +151,24 @@ export const useTasks = () => {
     const task = tasks.find(t => t.id === id);
     if (!task) return;
 
+    const wasCompleted = task.completed;
     await updateTask(id, { completed: !task.completed });
+    
+    // Send SMS notification when high/urgent task is completed
+    if (!wasCompleted && (task.priority === 'urgent' || task.priority === 'high')) {
+      try {
+        await supabase.functions.invoke('send-sms-notification', {
+          body: {
+            to: '+1234567890', // You can later make this configurable per user
+            message: 'Task has been completed!',
+            taskTitle: task.title,
+            taskPriority: task.priority,
+          },
+        });
+      } catch (smsError) {
+        console.error('SMS notification failed:', smsError);
+      }
+    }
   };
 
   useEffect(() => {

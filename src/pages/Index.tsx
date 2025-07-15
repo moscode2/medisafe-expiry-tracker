@@ -1,106 +1,27 @@
-import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import Header from "@/components/Header";
-import DashboardStats from "@/components/DashboardStats";
-import MedicineCard from "@/components/MedicineCard";
-import ScannerModal from "@/components/ScannerModal";
-import { useToast } from "@/hooks/use-toast";
-
-// Mock data for demonstration
-const mockMedicines = [
-  {
-    id: '1',
-    name: 'Aspirin 500mg',
-    barcode: '1234567890123',
-    expiryDate: '2024-08-15',
-    dateAdded: '2024-07-01'
-  },
-  {
-    id: '2',
-    name: 'Vitamin D3',
-    barcode: '2345678901234',
-    expiryDate: '2025-12-20',
-    dateAdded: '2024-06-15'
-  },
-  {
-    id: '3',
-    name: 'Blood Pressure Medication',
-    barcode: '3456789012345',
-    expiryDate: '2024-07-20',
-    dateAdded: '2024-05-10'
-  },
-  {
-    id: '4',
-    name: 'Ibuprofen 400mg',
-    barcode: '4567890123456',
-    expiryDate: '2024-07-05',
-    dateAdded: '2024-04-20'
-  }
-];
+import { TaskForm } from "@/components/TaskForm";
+import { TaskList } from "@/components/TaskList";
+import { useTasks } from "@/hooks/useTasks";
+import { useState } from "react";
+import { Plus, ListTodo, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Index = () => {
-  const [medicines, setMedicines] = useState(mockMedicines);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isScannerOpen, setIsScannerOpen] = useState(false);
-  const { toast } = useToast();
+  const { tasks, loading, createTask, toggleTaskComplete, deleteTask } = useTasks();
+  const [showTaskForm, setShowTaskForm] = useState(false);
 
-  // Filter medicines based on search
-  const filteredMedicines = medicines.filter(medicine =>
-    medicine.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    medicine.barcode.includes(searchTerm)
+  const completedTasks = tasks.filter(task => task.completed);
+  const pendingTasks = tasks.filter(task => !task.completed);
+  const urgentTasks = pendingTasks.filter(task => task.priority === 'urgent');
+  const overdueTasks = pendingTasks.filter(task => 
+    task.due_date && new Date(task.due_date) < new Date()
   );
 
-  // Calculate stats
-  const calculateStats = () => {
-    const today = new Date();
-    let safe = 0, expiring = 0, expired = 0;
-
-    medicines.forEach(medicine => {
-      const expiry = new Date(medicine.expiryDate);
-      const daysUntilExpiry = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      
-      if (daysUntilExpiry < 0) expired++;
-      else if (daysUntilExpiry <= 7) expiring++;
-      else safe++;
-    });
-
-    return { safe, expiring, expired };
-  };
-
-  const stats = calculateStats();
-
-  const handleAddMedicine = (barcode: string, medicineName: string, expiryDate: string) => {
-    const newMedicine = {
-      id: Date.now().toString(),
-      name: medicineName,
-      barcode,
-      expiryDate,
-      dateAdded: new Date().toISOString().split('T')[0]
-    };
-
-    setMedicines([...medicines, newMedicine]);
-    toast({
-      title: "Medicine added successfully!",
-      description: `${medicineName} has been added to your tracker.`,
-    });
-  };
-
-  const handleEditMedicine = (id: string) => {
-    toast({
-      title: "Edit functionality",
-      description: "Connect to Supabase to enable editing medicines.",
-    });
-  };
-
-  const handleDeleteMedicine = (id: string) => {
-    setMedicines(medicines.filter(med => med.id !== id));
-    toast({
-      title: "Medicine removed",
-      description: "Medicine has been removed from your tracker.",
-      variant: "destructive",
-    });
+  const handleCreateTask = async (taskData: any) => {
+    await createTask(taskData);
+    setShowTaskForm(false);
   };
 
   return (
@@ -109,100 +30,105 @@ const Index = () => {
       
       <main className="container mx-auto px-4 py-6 space-y-6">
         {/* Welcome Section */}
-        <div className="text-center space-y-2">
-          <h2 className="text-3xl font-bold text-foreground">Welcome to TaskMaster AI</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Manage your tasks intelligently with AI-powered prioritization, smart reminders, and productivity insights.
-          </p>
-        </div>
-
-        {/* Stats Dashboard */}
-        <DashboardStats
-          totalMedicines={medicines.length}
-          safeMedicines={stats.safe}
-          expiringMedicines={stats.expiring}
-          expiredMedicines={stats.expired}
-        />
-
-        {/* Action Bar */}
-        <div className="flex flex-col sm:flex-row gap-4 items-center">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search medicines..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Welcome to TaskMaster AI</h1>
+            <p className="text-muted-foreground mt-2">
+              Manage your tasks with AI-powered insights and prioritization
+            </p>
           </div>
-          <Button
-            variant="medical"
-            size="lg"
-            onClick={() => setIsScannerOpen(true)}
-            className="w-full sm:w-auto"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            Add Medicine
+          <Button onClick={() => setShowTaskForm(!showTaskForm)} size="lg" className="gap-2">
+            <Plus className="h-5 w-5" />
+            {showTaskForm ? 'Cancel' : 'Add New Task'}
           </Button>
         </div>
 
-        {/* Medicines Grid */}
-        <div className="space-y-4">
-          <h3 className="text-xl font-semibold text-foreground">
-            Your Medicines ({filteredMedicines.length})
-          </h3>
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-6 text-center">
+              <ListTodo className="h-8 w-8 mx-auto mb-2 text-primary" />
+              <h3 className="text-2xl font-bold">{pendingTasks.length}</h3>
+              <p className="text-sm text-muted-foreground">Pending Tasks</p>
+            </CardContent>
+          </Card>
           
-          {filteredMedicines.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="bg-muted rounded-full p-6 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-                <Search className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <p className="text-muted-foreground">
-                {searchTerm ? 'No medicines found matching your search.' : 'No medicines added yet. Start by scanning your first medicine!'}
-              </p>
-              {!searchTerm && (
-                <Button
-                  variant="medical"
-                  onClick={() => setIsScannerOpen(true)}
-                  className="mt-4"
-                >
-                  <Plus className="h-5 w-5 mr-2" />
-                  Add Your First Medicine
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredMedicines.map((medicine) => (
-                <MedicineCard
-                  key={medicine.id}
-                  {...medicine}
-                  onEdit={handleEditMedicine}
-                  onDelete={handleDeleteMedicine}
-                />
-              ))}
-            </div>
-          )}
+          <Card>
+            <CardContent className="p-6 text-center">
+              <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
+              <h3 className="text-2xl font-bold">{completedTasks.length}</h3>
+              <p className="text-sm text-muted-foreground">Completed</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6 text-center">
+              <AlertCircle className="h-8 w-8 mx-auto mb-2 text-red-500" />
+              <h3 className="text-2xl font-bold">{urgentTasks.length}</h3>
+              <p className="text-sm text-muted-foreground">Urgent</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6 text-center">
+              <Clock className="h-8 w-8 mx-auto mb-2 text-orange-500" />
+              <h3 className="text-2xl font-bold">{overdueTasks.length}</h3>
+              <p className="text-sm text-muted-foreground">Overdue</p>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Info Card for Backend Features */}
-        <div className="bg-accent/50 border border-accent rounded-lg p-6 text-center">
-          <h4 className="font-semibold text-foreground mb-2">Ready to unlock full functionality?</h4>
-          <p className="text-muted-foreground mb-4">
-            Connect to Supabase to enable user authentication, cloud storage, and real-time notifications for your medicines.
-          </p>
-          <Button variant="outline">
-            Connect to Supabase
-          </Button>
-        </div>
+        {/* Task Form */}
+        {showTaskForm && (
+          <TaskForm onSubmit={handleCreateTask} loading={loading} />
+        )}
+
+        {/* Tasks Management */}
+        <Tabs defaultValue="all" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="all">All Tasks ({tasks.length})</TabsTrigger>
+            <TabsTrigger value="pending">Pending ({pendingTasks.length})</TabsTrigger>
+            <TabsTrigger value="completed">Completed ({completedTasks.length})</TabsTrigger>
+            <TabsTrigger value="urgent">Urgent ({urgentTasks.length})</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="all" className="mt-6">
+            <TaskList 
+              tasks={tasks}
+              onToggleComplete={toggleTaskComplete}
+              onDelete={deleteTask}
+              loading={loading}
+            />
+          </TabsContent>
+          
+          <TabsContent value="pending" className="mt-6">
+            <TaskList 
+              tasks={pendingTasks}
+              onToggleComplete={toggleTaskComplete}
+              onDelete={deleteTask}
+              loading={loading}
+            />
+          </TabsContent>
+          
+          <TabsContent value="completed" className="mt-6">
+            <TaskList 
+              tasks={completedTasks}
+              onToggleComplete={toggleTaskComplete}
+              onDelete={deleteTask}
+              loading={loading}
+            />
+          </TabsContent>
+          
+          <TabsContent value="urgent" className="mt-6">
+            <TaskList 
+              tasks={urgentTasks}
+              onToggleComplete={toggleTaskComplete}
+              onDelete={deleteTask}
+              loading={loading}
+            />
+          </TabsContent>
+        </Tabs>
       </main>
-
-      {/* Scanner Modal */}
-      <ScannerModal
-        isOpen={isScannerOpen}
-        onClose={() => setIsScannerOpen(false)}
-        onScan={handleAddMedicine}
-      />
     </div>
   );
 };
